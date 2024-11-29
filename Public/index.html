@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Xtreme Volleyball</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(to top, #87ceeb, #ffffff);
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+        #scoreboard {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            font-size: 24px;
+            color: #fff;
+            display: none;
+            align-items: center;
+        }
+        #scoreboard .player-score {
+            display: flex;
+            align-items: center;
+            margin: 0 20px;
+            transition: transform 0.3s ease;
+        }
+        #scoreboard .player-score img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        #scoreboard .score-animate {
+            transform: scale(1.5);
+        }
+        #backgroundSelection {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 1200px;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+            padding: 20px;
+            font-size: 13px;
+            box-sizing: border-box;
+            border-radius: 20px;
+            overflow: auto;
+            max-height: 90vh;
+        }
+        .background-selection-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .background-options {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 100%;
+            margin-bottom: 20px;
+        }
+        .background-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            margin: 10px;
+            width: 200px;
+            transition: transform 0.3s, background 0.3s;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .background-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .background-selected {
+            border: 3px solid yellow;
+        }
+        .background-card img {
+            width: 100%;
+            border-radius: 10px;
+        }
+        #proceedToCharacterSelectionButton {
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            cursor: pointer;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            transition: background 0.3s;
+            margin-top: 20px;
+        }
+        #proceedToCharacterSelectionButton:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        #proceedToCharacterSelectionButton:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        #characterSelection {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 1200px;
+            background-image: url('selection_background.jpg');
+            background-size: cover;
+            background-position: center;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+            padding: 20px;
+            box-sizing: border-box;
+            border-radius: 20px;
+            overflow: auto;
+            max-height: 90vh;
+        }
+        .player-section-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        .player-section {
+            margin: 20px;
+            width: 45%;
+            text-align: center;
+        }
+        .character-selection-title {
+            font-size: 32px Press Start 2P;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .character-options {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 100%;
+            margin-bottom: 20px;
+        }
+        .character-card {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 10px;
+            width: 150px;
+            transition: transform 0.3s, background 0.3s;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .character-card:hover {
+            transform: translateY(-10px);
+            background: rgba(0, 0, 0, 0.8);
+        }
+        .character-selected {
+            border: 3px solid yellow;
+        }
+        .character-card img {
+            width: 100%;
+            border-radius: 10px;
+        }
+        .character-card h2 {
+            margin-top: 10px;
+            font-size: 20px Press Start 2P;
+        }
+        .character-card p {
+            margin: 5px 0;
+            font-size: 14px Press Start 2P;
+        }
+        #startGameButton {
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            cursor: pointer;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            transition: background 0.3s;
+            margin-top: 20px;
+            display: none;
+        }
+        #startGameButton:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        #startGameButton:hover:not(:disabled) {
+            background-color: #218838;
+        }
+        @media (max-width: 768px) {
+            #characterSelection,
+            #backgroundSelection {
+                width: 90%;
+            }
+            .player-section,
+            .background-card {
+                width: 100%;
+            }
+            .player-section-container {
+                flex-direction: column;
+            }
+        }
+        #loginScreen, #registerScreen, #roomSelectionScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            background-color: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 10px;
+            color: #fff;
+            text-align: center;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+        }
+        #loginScreen h1, #registerScreen h1, #roomSelectionScreen h1 {
+            margin-bottom: 20px;
+        }
+        #loginScreen input, #registerScreen input, #roomSelectionScreen input {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        #loginScreen button, #registerScreen button, #roomSelectionScreen button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #loginScreen p, #registerScreen p, #roomSelectionScreen p {
+            font-size: 12px;
+        }
+        #loginScreen a, #registerScreen a {
+            color: #00f;
+            text-decoration: none;
+        }
+        #loginScreen a:hover, #registerScreen a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<audio id="backgroundMusic" src="main_music.mp3" loop autoplay></audio>
+<audio id="pointSound" src="point.mp3"></audio>
+<audio id="selectSound" src="select.mp3"></audio>
+<audio id="smallSelectSound" src="small_select.mp3"></audio>
+<audio id="hitSound" src="hitball.mp3"></audio>
+<audio id="netHitSound" src="nethit.mp3"></audio>
+
+<div id="loginScreen">
+    <h1>Login</h1>
+    <input type="text" id="loginUsername" placeholder="Username">
+    <input type="password" id="loginPassword" placeholder="Password">
+    <button id="loginButton">Login</button>
+    <p>Don't have an account? <a href="#" id="showRegister">Register here</a></p>
+    <p id="loginError" style="color: red;"></p>
+</div>
+
+<div id="registerScreen" style="display: none;">
+    <h1>Register</h1>
+    <input type="text" id="registerUsername" placeholder="Username">
+    <input type="password" id="registerPassword" placeholder="Password">
+    <button id="registerButton">Register</button>
+    <p>Already have an account? <a href="#" id="showLogin">Login here</a></p>
+    <p id="registerError" style="color: red;"></p>
+</div>
+
+<div id="roomSelectionScreen" style="display: none;">
+    <h1>Room Selection</h1>
+    <button id="createRoomButton">Create Room</button>
+    <input type="text" id="joinRoomId" placeholder="Room ID">
+    <button id="joinRoomButton">Join Room</button>
+    <p id="roomError" style="color: red;"></p>
+</div>
+
+<div id="scoreboard">
+    <div class="player-score" id="player1Score">
+        <canvas id="player1Icon" width="50" height="100"></canvas>
+        <span>0</span>
+    </div>
+    <div class="player-score" id="player2Score">
+        <canvas id="player2Icon" width="50" height="100"></canvas>
+        <span>0</span>
+    </div>
+</div>
+
+<div id="backgroundSelection">
+    <h1 class="background-selection-title">Select Your Map</h1>
+    <div class="background-options">
+    </div>
+    <button id="proceedToCharacterSelectionButton" disabled>Proceed</button>
+</div>
+
+<div id="characterSelection">
+    <div class="player-section-container">
+        <div class="player-section">
+            <h1 class="character-selection-title">Select Your Character</h1>
+            <div class="character-options" id="characterOptions">
+            </div>
+        </div>
+    </div>
+    <button id="startGameButton" disabled>Start Game</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+    const socket = io();
+
+    const loginScreen = document.getElementById('loginScreen');
+    const registerScreen = document.getElementById('registerScreen');
+    const roomSelectionScreen = document.getElementById('roomSelectionScreen');
+
+    const loginButton = document.getElementById('loginButton');
+    const registerButton = document.getElementById('registerButton');
+
+    const showRegisterLink = document.getElementById('showRegister');
+    const showLoginLink = document.getElementById('showLogin');
+
+    const loginError = document.getElementById('loginError');
+    const registerError = document.getElementById('registerError');
+
+    const createRoomButton = document.getElementById('createRoomButton');
+    const joinRoomButton = document.getElementById('joinRoomButton');
+    const roomError = document.getElementById('roomError');
+
+    loginButton.addEventListener('click', () => {
+        const username = document.getElementById('loginUsername').value;
+        const password = document.getElementById('loginPassword').value;
+        socket.emit('login', { username, password });
+    });
+
+    registerButton.addEventListener('click', () => {
+        const username = document.getElementById('registerUsername').value;
+        const password = document.getElementById('registerPassword').value;
+        socket.emit('register', { username, password });
+    });
+
+    showRegisterLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        loginScreen.style.display = 'none';
+        registerScreen.style.display = 'block';
+    });
+
+    showLoginLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        registerScreen.style.display = 'none';
+        loginScreen.style.display = 'block';
+    });
+
+    socket.on('loginSuccess', (data) => {
+        loginScreen.style.display = 'none';
+        roomSelectionScreen.style.display = 'block';
+    });
+
+    socket.on('loginError', (message) => {
+        loginError.textContent = message;
+    });
+
+    socket.on('registerSuccess', (data) => {
+        registerScreen.style.display = 'none';
+        roomSelectionScreen.style.display = 'block';
+    });
+
+    socket.on('registerError', (message) => {
+        registerError.textContent = message;
+    });
+
+    createRoomButton.addEventListener('click', () => {
+        socket.emit('createRoom');
+    });
+
+    joinRoomButton.addEventListener('click', () => {
+        const roomId = document.getElementById('joinRoomId').value;
+        socket.emit('joinRoom', { roomId });
+    });
+
+    socket.on('roomCreated', (data) => {
+        window.playerRole = data.playerRole;
+        roomSelectionScreen.style.display = 'none';
+        backgroundSelection.style.display = 'flex';
+    });
+
+    socket.on('roomJoined', (data) => {
+        window.playerRole = 'player2';
+        roomSelectionScreen.style.display = 'none';
+        backgroundSelection.style.display = 'flex';
+    });
+
+    socket.on('joinError', (message) => {
+        roomError.textContent = message;
+    });
+
+    socket.on('startGame', (data) => {
+        roomSelectionScreen.style.display = 'none';
+        backgroundSelection.style.display = 'flex';
+    });
+
+    socket.on('opponentLeft', () => {
+        alert('Your opponent has left the game.');
+        location.reload();
+    });
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    const backgroundImage = new Image();
+
+    const ballImage = new Image();
+    ballImage.src = "ball.svg";
+
+    const mudIconImage = new Image();
+    mudIconImage.src = "mud_icon.png";
+
+    const speedIconImage = new Image();
+    speedIconImage.src = "speed_icon.png";
+
+    const enlargeIconImage = new Image();
+    enlargeIconImage.src = "enlarge_icon.png";
+
+    const hitSound = document.getElementById("hitSound");
+    const netHitSound = document.getElementById("netHitSound");
+
+    const backgroundMusic = document.getElementById("backgroundMusic");
+    backgroundMusic.volume = 0.5;
+
+    window.addEventListener("click", () => {
+        backgroundMusic.play().catch(error => {
+            console.error("Autoplay blocked: ", error);
+        });
+    });
+
+    const backgroundSelection = document.getElementById('backgroundSelection');
+    const backgroundOptionsDiv = backgroundSelection.querySelector('.background-options');
+    const proceedToCharacterSelectionButton = document.getElementById('proceedToCharacterSelectionButton');
+    let selectedBackground = null;
+
+    const backgrounds = [
+        { name: 'Beach', image: 'background_1.png' },
+        { name: 'Mountains', image: 'background_2.png' },
+        { name: 'City', image: 'background_3.png' },
+        { name: 'Forest', image: 'background_4.png' },
+        { name: 'Desert', image: 'background_5.png' },
+        { name: 'Snowy', image: 'background_6.png' },
+        { name: 'Stadium', image: 'background_7.png' },
+        { name: 'Space', image: 'background_8.png' },
+    ];
+
+    function createBackgroundCards() {
+        backgrounds.forEach((background, index) => {
+            const card = document.createElement('div');
+            card.classList.add('background-card');
+            card.innerHTML = `
+                <img src="${background.image}" alt="${background.name}">
+                <h2>${background.name}</h2>
+            `;
+            card.addEventListener('click', () => {
+                selectBackground(index, card);
+            });
+            backgroundOptionsDiv.appendChild(card);
+        });
+    }
+
+    function selectBackground(index, cardElement) {
+        playSelectSound();
+
+        selectedBackground = index;
+        Array.from(backgroundOptionsDiv.children).forEach(child => {
+            child.classList.remove('background-selected');
+        });
+        cardElement.classList.add('background-selected');
+        proceedToCharacterSelectionButton.disabled = false;
+
+        const selectedBackgroundImage = `url('${backgrounds[index].image}')`;
+        document.body.style.backgroundImage = selectedBackgroundImage;
+
+        backgroundImage.src = backgrounds[selectedBackground].image;
+
+        socket.emit('backgroundSelected', { backgroundIndex: selectedBackground });
+    }
+
+    proceedToCharacterSelectionButton.addEventListener('click', () => {
+        playSelectSound();
+        backgroundSelection.style.display = 'none';
+        characterSelection.style.display = 'flex';
+    });
+
+    createBackgroundCards();
+
+    socket.on('backgroundSelected', (data) => {
+        if (selectedBackground === null) {
+            selectedBackground = data.backgroundIndex;
+            backgroundImage.src = backgrounds[selectedBackground].image;
+            const selectedBackgroundImage = `url('${backgrounds[selectedBackground].image}')`;
+            document.body.style.backgroundImage = selectedBackgroundImage;
+        }
+    });
+
+    const characterSelection = document.getElementById('characterSelection');
+    const characterOptionsDiv = document.getElementById('characterOptions');
+    const startGameButton = document.getElementById('startGameButton');
+
+    let characterSelected = null;
+    let opponentCharacterSelected = null;
+
+    const characters = [
+        {
+            name: 'Speedster',
+            color: 'red',
+            speedMultiplier: 1.3,
+            sizeMultiplier: 0.8,
+            powerMultiplier: 0.9,
+            image: 'Speedster_Jump.png',
+        },
+        {
+            name: 'Giant',
+            color: 'blue',
+            speedMultiplier: 0.9,
+            sizeMultiplier: 1.1,
+            powerMultiplier: 0.9,
+            image: 'Giant_Jump.png',
+        },
+        {
+            name: 'Balanced',
+            color: 'purple',
+            speedMultiplier: 1.0,
+            sizeMultiplier: 1.0,
+            powerMultiplier: 1.0,
+            image: 'Balanced_Jump.png',
+        },
+    ];
+
+    function createCharacterCards() {
+        characters.forEach((character, index) => {
+            const card = document.createElement('div');
+            card.classList.add('character-card');
+            card.innerHTML = `
+                <img src="${character.image}" alt="${character.name}">
+                <h2>${character.name}</h2>
+                <p><strong>Speed:</strong> ${character.speedMultiplier}</p>
+                <p><strong>Size:</strong> ${character.sizeMultiplier}</p>
+                <p><strong>Power:</strong> ${character.powerMultiplier}</p>
+            `;
+            card.addEventListener('click', () => {
+                selectCharacter(index, card);
+            });
+            characterOptionsDiv.appendChild(card);
+        });
+    }
+
+    function selectCharacter(characterIndex, cardElement) {
+        playSmallSelectSound();
+
+        characterSelected = characterIndex;
+        Array.from(characterOptionsDiv.children).forEach(child => {
+            child.classList.remove('character-selected');
+        });
+        cardElement.classList.add('character-selected');
+        startGameButton.disabled = false;
+        startGameButton.style.display = 'block';
+
+        socket.emit('characterSelected', { characterIndex: characterSelected });
+    }
+
+    createCharacterCards();
+
+    startGameButton.addEventListener('click', () => {
+        playSelectSound();
+
+        characterSelection.style.display = 'none';
+        document.getElementById('scoreboard').style.display = 'flex';
+
+        initializePlayers();
+        initPositions();
+        startGameIfReady();
+    });
+
+    socket.on('characterSelected', (data) => {
+        if (data.socketId !== socket.id) {
+            opponentCharacterSelected = data.characterIndex;
+            startGameIfReady();
+        }
+    });
+
+    function startGameIfReady() {
+        if (characterSelected !== null && opponentCharacterSelected !== null) {
+            const playerIconCanvas = document.getElementById(window.playerRole === 'player1' ? "player1Icon" : "player2Icon").getContext("2d");
+            drawMiniStickmanIcon(playerIconCanvas, characters[characterSelected]);
+
+            const opponentIconCanvas = document.getElementById(window.playerRole === 'player1' ? "player2Icon" : "player1Icon").getContext("2d");
+            drawMiniStickmanIcon(opponentIconCanvas, characters[opponentCharacterSelected]);
+
+            gameLoop();
+        }
+    }
+
+    socket.on('opponentDisconnected', () => {
+        alert('Your opponent has disconnected.');
+        location.reload();
+    });
+
+    let player, opponent;
+    let gameOver = false;
+    let ball = {
+        x: 0,
+        y: 0,
+        dx: 0,
+        dy: 0,
+        inServe: true,
+        power: 0,
+        angle: 0,
+        trail: [],
+        isSmashed: false,
+        smashTime: 0,
+        netCollision: false,
+    };
+    let keys = {};
+    let isDragging = false;
+    let particles = [];
+    let powerUps = [];
+    let currentServer;
+    let netYPosition = 0;
+    let netDirection = 1;
+    let netMoving = false;
+    let confettiParticles = [];
+
+    const gravity = 0.4;
+    const defaultPlayerWidth = 50;
+    const defaultPlayerHeight = 100;
+    const defaultHeadRadius = 30;
+    const defaultArmWidth = 10;
+    const defaultArmLength = 75;
+    const defaultLegWidth = 20;
+    const defaultLegHeight = 75;
+    const ballRadius = 25;
+    let netHeight = 300;
+    const netWidth = 12;
+    const netSpacing = 25;
+
+    function initializePlayers() {
+        const character = characters[characterSelected];
+        const opponentCharacter = characters[opponentCharacterSelected];
+
+        player = {
+            x: window.playerRole === 'player1' ? 50 : canvas.width - 50 - getPlayerWidth(character),
+            y: 0,
+            dy: 0,
+            onGround: true,
+            score: 0,
+            canSmash: true,
+            smashCooldownTime: 5000,
+            lastSmashTime: 0,
+            smashActivated: false,
+            isStuck: false,
+            stuckTime: 0,
+            stuckDuration: 3000,
+            speedMultiplier: character.speedMultiplier,
+            sizeMultiplier: character.sizeMultiplier,
+            powerMultiplier: character.powerMultiplier,
+            enlarged: false,
+            enlargeTime: 0,
+            enlargeDuration: 5000,
+            color: character.color,
+        };
+
+        opponent = {
+            x: window.playerRole === 'player1' ? canvas.width - 50 - getPlayerWidth(opponentCharacter) : 50,
+            y: 0,
+            dy: 0,
+            onGround: true,
+            score: 0,
+            canSmash: true,
+            smashCooldownTime: 5000,
+            lastSmashTime: 0,
+            smashActivated: false,
+            isStuck: false,
+            stuckTime: 0,
+            stuckDuration: 3000,
+            speedMultiplier: opponentCharacter.speedMultiplier,
+            sizeMultiplier: opponentCharacter.sizeMultiplier,
+            powerMultiplier: opponentCharacter.powerMultiplier,
+            enlarged: false,
+            enlargeTime: 0,
+            enlargeDuration: 5000,
+            color: opponentCharacter.color,
+        };
+
+        currentServer = 'player1';
+    }
+
+    function initPositions() {
+        netHeight = canvas.height * 0.5;
+        player.y = canvas.height - getPlayerHeight(player) - getLegHeight(player);
+        opponent.y = canvas.height - getPlayerHeight(opponent) - getLegHeight(opponent);
+        resetBall();
+    }
+
+    function getPlayerWidth(player) {
+        return defaultPlayerWidth * player.sizeMultiplier * (player.enlarged ? 1.5 : 1);
+    }
+
+    function getPlayerHeight(player) {
+        return defaultPlayerHeight * player.sizeMultiplier * (player.enlarged ? 1.5 : 1);
+    }
+
+    function getHeadRadius(player) {
+        return defaultHeadRadius * player.sizeMultiplier * (player.enlarged ? 1.5 : 1);
+    }
+
+    function getArmLength(player) {
+        return defaultArmLength * player.sizeMultiplier * (player.enlarged ? 1.5 : 1);
+    }
+
+    function getLegHeight(player) {
+        return defaultLegHeight * player.sizeMultiplier * (player.enlarged ? 1.5 : 1);
+    }
+
+    function resetBall() {
+        if (currentServer === window.playerRole) {
+            ball.x = player.x + getPlayerWidth(player) + ballRadius;
+            ball.y = player.y + getHeadRadius(player);
+        } else {
+            ball.x = opponent.x - ballRadius;
+            ball.y = opponent.y + getHeadRadius(opponent);
+        }
+        ball.dx = 0;
+        ball.dy = 0;
+        ball.inServe = true;
+        ball.trail = [];
+        ball.netCollision = false;
+    }
+
+    function gameLoop() {
+        draw();
+        if (!gameOver) {
+            if (!ball.inServe) {
+                updateBall();
+                updateBallAfterNetCollision();
+            }
+            updatePlayers();
+            updatePowerUps();
+            checkPowerUpCollisions();
+
+            if (netMoving) {
+                netYPosition += netDirection * 2;
+                if (netYPosition > 50 || netYPosition < -50) {
+                    netDirection *= -1;
+                }
+            }
+
+            sendGameState();
+
+            requestAnimationFrame(gameLoop);
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (gameOver) {
+            showGameOverScreen();
+            return;
+        }
+
+        if (backgroundImage.complete) {
+            ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+        }
+
+        drawNet();
+        drawPlayer(player);
+        drawOpponent();
+        if (ballImage.complete) drawBall();
+        drawParticles();
+        drawPowerUps();
+        drawScores();
+        drawSmashUI();
+        drawTrajectory();
+    }
+
+    function drawNet() {
+        const netX = canvas.width / 2 - netWidth / 2;
+        const netY = canvas.height - netHeight + netYPosition;
+
+        ctx.fillStyle = "#8B4513";
+        ctx.fillRect(netX - 5, netY - 20, netWidth + 10, netHeight + 20);
+
+        const netGradient = ctx.createLinearGradient(netX, netY, netX + netWidth, netY + netHeight);
+        netGradient.addColorStop(0, "rgba(255, 255, 255, 0.8)");
+        netGradient.addColorStop(1, "rgba(200, 200, 200, 0.8)");
+        ctx.fillStyle = netGradient;
+        ctx.fillRect(netX, netY, netWidth, netHeight);
+
+        ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.lineWidth = 1;
+        for (let y = netY; y <= netY + netHeight; y += netSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(netX, y);
+            ctx.lineTo(netX + netWidth, y);
+            ctx.stroke();
+        }
+        for (let x = netX; x <= netX + netWidth; x += netSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(x, netY);
+            ctx.lineTo(x, netY + netHeight);
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+        ctx.fillRect(netX + netWidth, netY + 10, 5, netHeight - 10);
+    }
+
+    function drawPlayer(player) {
+        const playerWidth = getPlayerWidth(player);
+        const playerHeight = getPlayerHeight(player);
+        const headRadius = getHeadRadius(player);
+        const armLength = getArmLength(player);
+        const legHeight = getLegHeight(player);
+
+        const torsoX = player.x + playerWidth / 2;
+        const torsoY = player.y + headRadius;
+
+        const skinTone = "#d2a679";
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+        ctx.beginPath();
+        ctx.ellipse(player.x + playerWidth / 2, canvas.height - 5, playerWidth, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(player.x + playerWidth / 2, player.y, headRadius, 0, Math.PI * 2);
+        ctx.fillStyle = skinTone;
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.fillStyle = player.color;
+        ctx.fillRect(torsoX - playerWidth / 2, torsoY, playerWidth, playerHeight);
+
+        ctx.fillStyle = skinTone;
+
+        ctx.save();
+        ctx.translate(torsoX - playerWidth / 2, torsoY + 10);
+        ctx.rotate(Math.sin(Date.now() / 200) * 0.1);
+        ctx.fillRect(-defaultArmWidth / 2, 0, defaultArmWidth, armLength);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(torsoX + playerWidth / 2, torsoY + 10);
+        ctx.rotate(-Math.sin(Date.now() / 200) * 0.1);
+        ctx.fillRect(-defaultArmWidth / 2, 0, defaultArmWidth, armLength);
+        ctx.restore();
+
+        ctx.fillStyle = player.color;
+        ctx.fillRect(torsoX - playerWidth / 4 - defaultLegWidth / 2, torsoY + playerHeight, defaultLegWidth, legHeight);
+        ctx.fillRect(torsoX + playerWidth / 4 - defaultLegWidth / 2, torsoY + playerHeight, defaultLegWidth, legHeight);
+
+        if (player.isStuck) {
+            ctx.fillStyle = 'rgba(139,69,19,0.5)';
+            ctx.fillRect(player.x, player.y, playerWidth, playerHeight + legHeight + headRadius);
+        }
+    }
+
+    function drawOpponent() {
+        const opponentWidth = getPlayerWidth(opponent);
+        const opponentHeight = getPlayerHeight(opponent);
+        const headRadius = getHeadRadius(opponent);
+        const armLength = getArmLength(opponent);
+        const legHeight = getLegHeight(opponent);
+
+        const torsoX = opponent.x + opponentWidth / 2;
+        const torsoY = opponent.y + headRadius;
+
+        const skinTone = "#d2a679";
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.2)";
+        ctx.beginPath();
+        ctx.ellipse(opponent.x + opponentWidth / 2, canvas.height - 5, opponentWidth, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(opponent.x + opponentWidth / 2, opponent.y, headRadius, 0, Math.PI * 2);
+        ctx.fillStyle = skinTone;
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.fillStyle = opponent.color;
+        ctx.fillRect(torsoX - opponentWidth / 2, torsoY, opponentWidth, opponentHeight);
+
+        ctx.fillStyle = skinTone;
+
+        ctx.save();
+        ctx.translate(torsoX - opponentWidth / 2, torsoY + 10);
+        ctx.rotate(Math.sin(Date.now() / 200) * 0.1);
+        ctx.fillRect(-defaultArmWidth / 2, 0, defaultArmWidth, armLength);
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate(torsoX + opponentWidth / 2, torsoY + 10);
+        ctx.rotate(-Math.sin(Date.now() / 200) * 0.1);
+        ctx.fillRect(-defaultArmWidth / 2, 0, defaultArmWidth, armLength);
+        ctx.restore();
+
+        ctx.fillStyle = opponent.color;
+        ctx.fillRect(torsoX - opponentWidth / 4 - defaultLegWidth / 2, torsoY + opponentHeight, defaultLegWidth, legHeight);
+        ctx.fillRect(torsoX + opponentWidth / 4 - defaultLegWidth / 2, torsoY + opponentHeight, defaultLegWidth, legHeight);
+
+        if (opponent.isStuck) {
+            ctx.fillStyle = 'rgba(139,69,19,0.5)';
+            ctx.fillRect(opponent.x, opponent.y, opponentWidth, opponentHeight + legHeight + headRadius);
+        }
+    }
+
+    function drawBall() {
+        const ballDiameter = ballRadius * 2;
+
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(255, 255, 0, 0.5)";
+        ctx.beginPath();
+        for (let i = 0; i < ball.trail.length - 1; i++) {
+            ctx.moveTo(ball.trail[i].x, ball.trail[i].y);
+            ctx.lineTo(ball.trail[i + 1].x, ball.trail[i + 1].y);
+        }
+        ctx.stroke();
+
+        if (ball.isSmashed) {
+            ctx.save();
+            ctx.globalAlpha = 0.7 + 0.3 * Math.sin(Date.now() / 100);
+            ctx.drawImage(ballImage, ball.x - ballRadius, ball.y - ballRadius, ballDiameter, ballDiameter);
+            ctx.restore();
+
+            if (Date.now() - ball.smashTime > 1000) {
+                ball.isSmashed = false;
+            }
+        } else {
+            ctx.drawImage(ballImage, ball.x - ballRadius, ball.y - ballRadius, ballDiameter, ballDiameter);
+        }
+    }
+
+    function drawParticles() {
+        particles.forEach((particle, index) => {
+            ctx.fillStyle = `rgba(255, 165, 0, ${particle.alpha})`;
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            ctx.fill();
+            particle.x += particle.dx;
+            particle.y += particle.dy;
+            particle.alpha -= 0.02;
+            if (particle.alpha <= 0) {
+                particles.splice(index, 1);
+            }
+        });
+    }
+
+    function drawPowerUps() {
+        powerUps.forEach((powerUp) => {
+            if (powerUp.type === 'mud') {
+                ctx.drawImage(mudIconImage, powerUp.x - 20, powerUp.y - 20, 40, 40);
+            } else if (powerUp.type === 'speed') {
+                ctx.drawImage(speedIconImage, powerUp.x - 20, powerUp.y - 20, 40, 40);
+            } else if (powerUp.type === 'enlarge') {
+                ctx.drawImage(enlargeIconImage, powerUp.x - 20, powerUp.y - 20, 40, 40);
+            }
+        });
+    }
+
+    function drawScores() {
+        if (window.playerRole === 'player1') {
+            document.querySelector("#player1Score span").textContent = player.score;
+            document.querySelector("#player2Score span").textContent = opponent.score;
+        } else {
+            document.querySelector("#player1Score span").textContent = opponent.score;
+            document.querySelector("#player2Score span").textContent = player.score;
+        }
+    }
+
+    function drawSmashUI() {
+        ctx.fillStyle = player.canSmash ? 'green' : 'red';
+        ctx.fillRect(20, 60, 100, 10);
+        ctx.strokeStyle = 'black';
+        ctx.strokeRect(20, 60, 100, 10);
+        ctx.fillStyle = 'black';
+        ctx.font = '12px Press Start 2P';
+        ctx.fillText('Smash', 20, 55);
+    }
+
+    function drawTrajectory() {
+        if (!isDragging) return;
+
+        const power = Math.min(ball.power, 300);
+        const angle = ball.angle;
+
+        const endX = ball.x + power * Math.cos(angle);
+        const endY = ball.y - power * Math.sin(angle);
+
+        ctx.beginPath();
+        ctx.moveTo(ball.x, ball.y);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = `rgba(255, 0, 0, ${0.5 + ball.power / 400})`;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 15]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function playSelectSound() {
+        const selectSound = document.getElementById("selectSound");
+        selectSound.currentTime = 0;
+        selectSound.play();
+    }
+
+    function playSmallSelectSound() {
+        const smallSelectSound = document.getElementById("smallSelectSound");
+        smallSelectSound.currentTime = 0;
+        smallSelectSound.play();
+    }
+
+    function drawMiniStickmanIcon(ctx, character) {
+        const iconWidth = 50;
+        const iconHeight = 100;
+        const headRadius = 15;
+        const torsoX = iconWidth / 2;
+        const torsoY = headRadius;
+
+        const skinTone = "#d2a679";
+
+        ctx.beginPath();
+        ctx.arc(torsoX, headRadius, headRadius, 0, Math.PI * 2);
+        ctx.fillStyle = skinTone;
+        ctx.fill();
+
+        ctx.fillStyle = character.color;
+        ctx.fillRect(torsoX - 10, torsoY, 20, 40);
+
+        ctx.fillStyle = skinTone;
+        ctx.fillRect(torsoX - 30, torsoY + 10, 20, 5);
+        ctx.fillRect(torsoX + 10, torsoY + 10, 20, 5);
+
+        ctx.fillRect(torsoX - 10, torsoY + 40, 5, 40);
+        ctx.fillRect(torsoX + 5, torsoY + 40, 5, 40);
+    }
+
+    function sendGameState() {
+        const gameState = {
+            player: {
+                x: player.x,
+                y: player.y,
+                dy: player.dy,
+                onGround: player.onGround,
+                canSmash: player.canSmash,
+                smashActivated: player.smashActivated,
+                isStuck: player.isStuck,
+                enlarged: player.enlarged,
+                score: player.score,
+            },
+            ball: {
+                x: ball.x,
+                y: ball.y,
+                dx: ball.dx,
+                dy: ball.dy,
+                inServe: ball.inServe,
+            },
+        };
+        socket.emit('gameStateUpdate', gameState);
+    }
+
+    socket.on('gameStateUpdate', (data) => {
+        opponent.x = data.player.x;
+        opponent.y = data.player.y;
+        opponent.dy = data.player.dy;
+        opponent.onGround = data.player.onGround;
+        opponent.canSmash = data.player.canSmash;
+        opponent.smashActivated = data.player.smashActivated;
+        opponent.isStuck = data.player.isStuck;
+        opponent.enlarged = data.player.enlarged;
+        opponent.score = data.player.score;
+
+        if (window.playerRole !== currentServer) {
+            ball.x = data.ball.x;
+            ball.y = data.ball.y;
+            ball.dx = data.ball.dx;
+            ball.dy = data.ball.dy;
+            ball.inServe = data.ball.inServe;
+        }
+    });
+
+    function updateBall() {
+        if (currentServer !== window.playerRole) return;
+
+        ball.x += ball.dx;
+        ball.y += ball.dy;
+
+        ball.dy += gravity;
+
+        ball.trail.push({ x: ball.x, y: ball.y });
+        if (ball.trail.length > 10) {
+            ball.trail.shift();
+        }
+
+        if (ball.y - ballRadius <= 0) {
+            ball.dy = Math.abs(ball.dy);
+        }
+
+        if (ball.x - ballRadius <= 0) {
+            ball.dx = Math.abs(ball.dx);
+        }
+
+        if (ball.x + ballRadius >= canvas.width) {
+            ball.dx = -Math.abs(ball.dx);
+        }
+
+        handlePlayerCollision(player, opponent);
+        handlePlayerCollision(opponent, player);
+
+        const netX = canvas.width / 2 - netWidth / 2;
+        const netY = canvas.height - netHeight + netYPosition;
+
+        if (
+            ball.x + ballRadius > netX &&
+            ball.x - ballRadius < netX + netWidth &&
+            ball.y + ballRadius > netY &&
+            ball.y - ballRadius < netY + netHeight
+        ) {
+            netHitSound.currentTime = 0;
+            netHitSound.play();
+            ball.netCollision = true;
+
+            if (ball.x < canvas.width / 2) {
+                ball.x = netX - ballRadius;
+            } else {
+                ball.x = netX + netWidth + ballRadius;
+            }
+
+            ball.dx = 0;
+            ball.dy = 2;
+
+            return;
+        }
+
+        if (ball.y + ballRadius > canvas.height) {
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: ball.x,
+                    y: canvas.height - ballRadius,
+                    dx: (Math.random() - 0.5) * 6,
+                    dy: (Math.random() - 1) * 6,
+                    size: Math.random() * 5 + 2,
+                    alpha: 1,
+                });
+            }
+
+            if (ball.x < canvas.width / 2) {
+                opponent.score++;
+                animateScore(opponent);
+                currentServer = opponent === player ? window.playerRole : 'opponent';
+            } else {
+                player.score++;
+                animateScore(player);
+                currentServer = player === player ? window.playerRole : 'opponent';
+            }
+
+            if (player.score >= 7 || opponent.score >= 7) {
+                netMoving = true;
+            }
+
+            if (player.score >= 11 || opponent.score >= 11) {
+                gameOver = true;
+                return;
+            }
+
+            resetBall();
+        }
+    }
+
+    function handlePlayerCollision(player, opponent) {
+        const playerWidth = getPlayerWidth(player);
+        const playerHeight = getPlayerHeight(player);
+        const legHeight = getLegHeight(player);
+
+        if (
+            ball.x + ballRadius > player.x &&
+            ball.x - ballRadius < player.x + playerWidth &&
+            ball.y + ballRadius > player.y &&
+            ball.y - ballRadius < player.y + playerHeight + legHeight
+        ) {
+            const isJumping = !player.onGround;
+
+            if (player.smashActivated) {
+                const speed = 12 * player.powerMultiplier;
+                if (isJumping) {
+                    const angleDegrees = 75;
+                    const angleRadians = angleDegrees * (Math.PI / 180);
+                    const direction = opponent.x > player.x ? 1 : -1;
+
+                    ball.dx = direction * speed * Math.cos(angleRadians);
+                    ball.dy = -speed * Math.sin(angleRadians);
+                } else {
+                    ball.dy = -Math.abs(ball.dy) * 1.3 * player.powerMultiplier;
+                    ball.dx = (ball.x - (player.x + playerWidth / 2)) * 0.2 * player.powerMultiplier;
+                }
+
+                player.canSmash = false;
+                player.smashActivated = false;
+                player.lastSmashTime = Date.now();
+
+                ball.isSmashed = true;
+                ball.smashTime = Date.now();
+            } else {
+                if (isJumping) {
+                    const speed = 20 * player.powerMultiplier;
+                    const angleDegrees = 65;
+                    const angleRadians = angleDegrees * (Math.PI / 180);
+                    const direction = opponent.x > player.x ? 1 : -1;
+
+                    ball.dx = direction * speed * Math.cos(angleRadians);
+                    ball.dy = -speed * Math.sin(angleRadians);
+                } else {
+                    ball.dy = -Math.abs(ball.dy) * player.powerMultiplier;
+                    ball.dx = (ball.x - (player.x + playerWidth / 2)) * 0.1 * player.powerMultiplier;
+                }
+            }
+
+            hitSound.currentTime = 0;
+            hitSound.play();
+
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: ball.x,
+                    y: ball.y,
+                    dx: (Math.random() - 0.5) * 4,
+                    dy: (Math.random() - 0.5) * 4,
+                    size: Math.random() * 5 + 2,
+                    alpha: 1,
+                });
+            }
+        }
+    }
+
+    function updateBallAfterNetCollision() {
+        if (!ball.netCollision) return;
+
+        ball.y += ball.dy;
+        ball.dy += gravity * 0.5;
+
+        ball.trail.push({ x: ball.x, y: ball.y });
+        if (ball.trail.length > 10) {
+            ball.trail.shift();
+        }
+
+        if (ball.y + ballRadius >= canvas.height) {
+            ball.dy = -ball.dy * 0.3;
+            ball.y = canvas.height - ballRadius;
+
+            if (Math.abs(ball.dy) < 1) {
+                ball.netCollision = false;
+
+                if (ball.x < canvas.width / 2) {
+                    opponent.score++;
+                    animateScore(opponent);
+                    currentServer = opponent === player ? window.playerRole : 'opponent';
+                } else {
+                    player.score++;
+                    animateScore(player);
+                    currentServer = player === player ? window.playerRole : 'opponent';
+                }
+
+                if (player.score >= 7 || opponent.score >= 7) {
+                    netMoving = true;
+                }
+
+                if (player.score >= 11 || opponent.score >= 11) {
+                    gameOver = true;
+                    return;
+                }
+
+                resetBall();
+            }
+        }
+    }
+
+    function updatePlayers() {
+        if (!player.isStuck) {
+            if (keys["w"] && player.onGround) {
+                player.dy = -10 * player.speedMultiplier;
+                player.onGround = false;
+            }
+            if (keys["a"] && player.x > 0) {
+                player.x -= 10 * player.speedMultiplier;
+            }
+            if (keys["d"] && player.x < canvas.width / 2 - getPlayerWidth(player)) {
+                player.x += 10 * player.speedMultiplier;
+            }
+        } else {
+            if (Date.now() - player.stuckTime >= player.stuckDuration) {
+                player.isStuck = false;
+            }
+        }
+
+        player.y += player.dy;
+        player.dy += gravity;
+
+        const playerHeight = getPlayerHeight(player);
+        const legHeight = getLegHeight(player);
+
+        if (player.y + playerHeight + legHeight >= canvas.height) {
+            player.y = canvas.height - playerHeight + 5 - legHeight;
+            player.dy = 0;
+            player.onGround = true;
+        }
+
+        if (!player.canSmash) {
+            const timeSinceLastSmash = Date.now() - player.lastSmashTime;
+            if (timeSinceLastSmash >= player.smashCooldownTime) {
+                player.canSmash = true;
+            }
+        }
+
+        if (player.speedMultiplier > player.sizeMultiplier) {
+            const timeSinceSpeed = Date.now() - player.speedTime;
+            if (timeSinceSpeed >= player.speedDuration) {
+                player.speedMultiplier = player.sizeMultiplier;
+            }
+        }
+
+        if (player.enlarged) {
+            const timeSinceEnlarge = Date.now() - player.enlargeTime;
+            if (timeSinceEnlarge >= player.enlargeDuration) {
+                player.enlarged = false;
+            }
+        }
+    }
+
+    function updatePowerUps() {
+        powerUps.forEach((powerUp, index) => {
+            powerUp.y += powerUp.dy;
+
+            if (powerUp.y >= canvas.height - 5) {
+                createExplosion(powerUp.x, canvas.height - 5);
+                powerUps.splice(index, 1);
+            }
+        });
+    }
+
+    function checkPowerUpCollisions() {
+        powerUps.forEach((powerUp, index) => {
+            if (!powerUp.collected) {
+                const playerWidth = getPlayerWidth(player);
+                const playerHeight = getPlayerHeight(player);
+                const legHeight = getLegHeight(player);
+
+                if (
+                    powerUp.x > player.x &&
+                    powerUp.x < player.x + playerWidth &&
+                    powerUp.y > player.y &&
+                    powerUp.y < player.y + playerHeight + legHeight
+                ) {
+                    powerUp.collected = true;
+                    applyPowerUpEffect(powerUp, player);
+                    setTimeout(() => {
+                        powerUps.splice(index, 1);
+                    }, 1000);
+                }
+            }
+        });
+    }
+
+    function applyPowerUpEffect(powerUp, player) {
+        if (powerUp.type === 'mud') {
+            player.isStuck = true;
+            player.stuckTime = Date.now();
+        } else if (powerUp.type === 'speed') {
+            player.speedMultiplier *= 1.5;
+            player.speedTime = Date.now();
+            player.speedDuration = 5000;
+        } else if (powerUp.type === 'enlarge') {
+            player.enlarged = true;
+            player.enlargeTime = Date.now();
+        }
+    }
+
+    function createExplosion(x, y) {
+        for (let i = 0; i < 30; i++) {
+            particles.push({
+                x: x,
+                y: y,
+                dx: (Math.random() - 0.5) * 6,
+                dy: (Math.random() - 1) * -6,
+                size: Math.random() * 5 + 2,
+                alpha: 1,
+            });
+        }
+    }
+
+    function animateScore(player) {
+        const scoreElement = window.playerRole === 'player1' && player === player ? document.querySelector("#player1Score") : document.querySelector("#player2Score");
+        scoreElement.classList.add("score-animate");
+
+        const pointSound = document.getElementById("pointSound");
+        pointSound.currentTime = 0;
+        pointSound.play();
+
+        setTimeout(() => {
+            scoreElement.classList.remove("score-animate");
+        }, 500);
+    }
+
+    function showGameOverScreen() {
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 72px Press Start 2P';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        let winnerText = '';
+        if (player.score >= 11) {
+            winnerText = 'You Win!';
+        } else if (opponent.score >= 11) {
+            winnerText = 'You Lose!';
+        }
+
+        ctx.fillText(winnerText, canvas.width / 2, canvas.height / 2);
+
+        if (confettiParticles.length === 0) {
+            for (let i = 0; i < 100; i++) {
+                confettiParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    dx: (Math.random() - 0.5) * 2,
+                    dy: Math.random() * 2 + 1,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                    size: Math.random() * 5 + 5,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 10
+                });
+            }
+        }
+
+        drawConfetti();
+    }
+
+    function drawConfetti() {
+        confettiParticles.forEach((particle) => {
+            ctx.save();
+            ctx.translate(particle.x, particle.y);
+            ctx.rotate((particle.rotation * Math.PI) / 180);
+            ctx.fillStyle = particle.color;
+            ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size);
+            ctx.restore();
+
+            particle.x += particle.dx;
+            particle.y += particle.dy;
+            particle.rotation += particle.rotationSpeed;
+
+            if (particle.y > canvas.height) {
+                particle.y = -particle.size;
+                particle.x = Math.random() * canvas.width;
+            }
+        });
+    }
+
+    canvas.addEventListener("mousedown", (e) => {
+        if (!ball.inServe) return;
+        if (currentServer !== window.playerRole) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const distance = Math.sqrt((mouseX - ball.x) ** 2 + (mouseY - ball.y) ** 2);
+        if (distance <= ballRadius) {
+            isDragging = true;
+        }
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const dx = mouseX - ball.x;
+        const dy = ball.y - mouseY;
+
+        ball.angle = Math.atan2(dy, dx);
+        ball.power = Math.min(Math.sqrt(dx ** 2 + dy ** 2), 300);
+    });
+
+    canvas.addEventListener("mouseup", () => {
+        if (!isDragging) return;
+
+        isDragging = false;
+        serveBall();
+    });
+
+    function serveBall() {
+        const radians = ball.angle;
+        ball.dx = (ball.power * Math.cos(radians) / 12) * player.powerMultiplier;
+        ball.dy = (-ball.power * Math.sin(radians) / 12) * player.powerMultiplier;
+        ball.inServe = false;
+    }
+
+    window.addEventListener("keydown", (e) => {
+        if (!keys[e.key]) {
+            keys[e.key] = true;
+
+            if (e.key === 's') {
+                if (player.canSmash) {
+                    player.smashActivated = true;
+                }
+            }
+        }
+    });
+
+    window.addEventListener("keyup", (e) => {
+        keys[e.key] = false;
+    });
+
+    function spawnPowerUp() {
+        const powerUpTypes = ['mud', 'speed', 'enlarge'];
+        const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
+        const side = Math.random() < 0.5 ? 'left' : 'right';
+
+        if (powerUps.some(powerUp => powerUp.side === side && !powerUp.collected)) {
+            setTimeout(spawnPowerUp, Math.random() * 10000 + 5000);
+            return;
+        }
+
+        const x = side === 'left' ? Math.random() * (canvas.width / 2 - 100) + 50
+                                  : Math.random() * (canvas.width / 2 - 100) + canvas.width / 2 + 50;
+        const y = 0;
+
+        powerUps.push({
+            type: type,
+            x: x,
+            y: y,
+            dy: 2,
+            side: side,
+            collected: false,
+            animationTime: 0
+        });
+
+        setTimeout(spawnPowerUp, Math.random() * 10000 + 5000);
+    }
+    setTimeout(spawnPowerUp, 5000);
+
+    const imagesToLoad = [ballImage, mudIconImage, speedIconImage, enlargeIconImage];
+    let imagesLoaded = 0;
+
+    imagesToLoad.forEach((img) => {
+        img.onload = () => {
+            imagesLoaded++;
+            if (imagesLoaded === imagesToLoad.length) {
+                // Start game after images are loaded
+            }
+        };
+    });
+</script>
+</body>
+</html>

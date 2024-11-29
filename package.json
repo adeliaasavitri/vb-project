@@ -1,0 +1,20 @@
+{
+  "name": "volleyball",
+  "version": "1.0.0",
+  "main": "game_server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "## To-do - Game front page (What will be in it)   -> Game description and instructions   -> Player Registration and sign-in   -> Player Pair-up (join random game or invite a friend)",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "redis": "^4.7.0",
+    "session": "^0.1.0",
+    "socket.io": "^4.8.1"
+  }
+}
