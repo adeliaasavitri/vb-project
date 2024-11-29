@@ -333,6 +333,8 @@
 
 <script>
     const socket = io();
+    let gameLoopRunning = false;
+
 
     const loginScreen = document.getElementById('loginScreen');
     const registerScreen = document.getElementById('registerScreen');
@@ -405,22 +407,21 @@
     socket.on('roomCreated', (data) => {
         window.playerRole = data.playerRole;
         roomSelectionScreen.style.display = 'none';
-        backgroundSelection.style.display = 'flex';
+        if (window.playerRole === 'player1') {
+            backgroundSelection.style.display = 'flex';
+        } else {
+            socket.emit('requestBackground');
+        }
     });
 
     socket.on('roomJoined', (data) => {
-        window.playerRole = 'player2';
+        window.playerRole = data.playerRole;
         roomSelectionScreen.style.display = 'none';
-        backgroundSelection.style.display = 'flex';
+        socket.emit('requestBackground');
     });
 
     socket.on('joinError', (message) => {
         roomError.textContent = message;
-    });
-
-    socket.on('startGame', (data) => {
-        roomSelectionScreen.style.display = 'none';
-        backgroundSelection.style.display = 'flex';
     });
 
     socket.on('opponentLeft', () => {
@@ -509,14 +510,14 @@
         document.body.style.backgroundImage = selectedBackgroundImage;
 
         backgroundImage.src = backgrounds[selectedBackground].image;
-
-        socket.emit('backgroundSelected', { backgroundIndex: selectedBackground });
     }
 
     proceedToCharacterSelectionButton.addEventListener('click', () => {
         playSelectSound();
         backgroundSelection.style.display = 'none';
         characterSelection.style.display = 'flex';
+
+        socket.emit('backgroundSelected', { backgroundIndex: selectedBackground });
     });
 
     createBackgroundCards();
@@ -527,6 +528,13 @@
             backgroundImage.src = backgrounds[selectedBackground].image;
             const selectedBackgroundImage = `url('${backgrounds[selectedBackground].image}')`;
             document.body.style.backgroundImage = selectedBackgroundImage;
+            characterSelection.style.display = 'flex';
+        }
+    });
+
+    socket.on('requestBackground', () => {
+        if (selectedBackground !== null) {
+            socket.emit('backgroundSelected', { backgroundIndex: selectedBackground });
         }
     });
 
@@ -601,12 +609,11 @@
     startGameButton.addEventListener('click', () => {
         playSelectSound();
 
-        characterSelection.style.display = 'none';
-        document.getElementById('scoreboard').style.display = 'flex';
+        startGameButton.disabled = true;
+        // characterSelection.style.display = 'none'; // Moved to startGameIfReady
+        // document.getElementById('scoreboard').style.display = 'flex'; // Moved to startGameIfReady
 
-        initializePlayers();
-        initPositions();
-        startGameIfReady();
+        socket.emit('playerReady');
     });
 
     socket.on('characterSelected', (data) => {
@@ -616,15 +623,33 @@
         }
     });
 
+    let bothPlayersReady = false;
+
+    socket.on('bothPlayersReady', () => {
+        bothPlayersReady = true;
+        console.log('Both players are ready. Starting the game.');
+        startGameIfReady();
+    });
+
     function startGameIfReady() {
-        if (characterSelected !== null && opponentCharacterSelected !== null) {
+        if (characterSelected !== null && opponentCharacterSelected !== null && bothPlayersReady) {
+            characterSelection.style.display = 'none';
+            document.getElementById('scoreboard').style.display = 'flex';
+
             const playerIconCanvas = document.getElementById(window.playerRole === 'player1' ? "player1Icon" : "player2Icon").getContext("2d");
             drawMiniStickmanIcon(playerIconCanvas, characters[characterSelected]);
 
             const opponentIconCanvas = document.getElementById(window.playerRole === 'player1' ? "player2Icon" : "player1Icon").getContext("2d");
             drawMiniStickmanIcon(opponentIconCanvas, characters[opponentCharacterSelected]);
 
-            gameLoop();
+            initializePlayers();
+            initPositions();
+
+            // Prevent multiple game loops by checking the flag
+            if (!gameLoopRunning) { // <--- Check if the game loop is already running
+                gameLoopRunning = true; // <--- Set the flag to true
+                gameLoop();
+            }
         }
     }
 
@@ -695,6 +720,8 @@
             enlargeTime: 0,
             enlargeDuration: 5000,
             color: character.color,
+            speedTime: 0,
+            speedDuration: 5000,
         };
 
         opponent = {
@@ -717,9 +744,26 @@
             enlargeTime: 0,
             enlargeDuration: 5000,
             color: opponentCharacter.color,
+            speedTime: 0,
+            speedDuration: 5000,
         };
 
         currentServer = 'player1';
+
+        // Send initial positions to opponent
+        socket.emit('initialPositions', {
+            player: {
+                x: player.x,
+                y: player.y,
+                dy: player.dy,
+                onGround: player.onGround,
+                score: player.score,
+                canSmash: player.canSmash,
+                smashActivated: player.smashActivated,
+                isStuck: player.isStuck,
+                enlarged: player.enlarged,
+            }
+        });
     }
 
     function initPositions() {
@@ -728,6 +772,18 @@
         opponent.y = canvas.height - getPlayerHeight(opponent) - getLegHeight(opponent);
         resetBall();
     }
+
+    socket.on('initialPositions', (data) => {
+        opponent.x = data.player.x;
+        opponent.y = data.player.y;
+        opponent.dy = data.player.dy;
+        opponent.onGround = data.player.onGround;
+        opponent.score = data.player.score;
+        opponent.canSmash = data.player.canSmash;
+        opponent.smashActivated = data.player.smashActivated;
+        opponent.isStuck = data.player.isStuck;
+        opponent.enlarged = data.player.enlarged;
+    });
 
     function getPlayerWidth(player) {
         return defaultPlayerWidth * player.sizeMultiplier * (player.enlarged ? 1.5 : 1);
@@ -749,21 +805,7 @@
         return defaultLegHeight * player.sizeMultiplier * (player.enlarged ? 1.5 : 1);
     }
 
-    function resetBall() {
-        if (currentServer === window.playerRole) {
-            ball.x = player.x + getPlayerWidth(player) + ballRadius;
-            ball.y = player.y + getHeadRadius(player);
-        } else {
-            ball.x = opponent.x - ballRadius;
-            ball.y = opponent.y + getHeadRadius(opponent);
-        }
-        ball.dx = 0;
-        ball.dy = 0;
-        ball.inServe = true;
-        ball.trail = [];
-        ball.netCollision = false;
-    }
-
+    // Game Loop and Logic
     function gameLoop() {
         draw();
         if (!gameOver) {
@@ -785,6 +827,9 @@
             sendGameState();
 
             requestAnimationFrame(gameLoop);
+        } else {
+            // Game over logic
+            gameLoopRunning = false; // <--- Reset the flag when the game loop ends
         }
     }
 
@@ -1347,10 +1392,10 @@
             }
         }
 
-        if (player.speedMultiplier > player.sizeMultiplier) {
+        if (player.speedMultiplier > characters[characterSelected].speedMultiplier) {
             const timeSinceSpeed = Date.now() - player.speedTime;
             if (timeSinceSpeed >= player.speedDuration) {
-                player.speedMultiplier = player.sizeMultiplier;
+                player.speedMultiplier = characters[characterSelected].speedMultiplier;
             }
         }
 
@@ -1462,7 +1507,7 @@
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
                     dx: (Math.random() - 0.5) * 2,
-                    dy: Math.random() * 2 + 1,
+                    dy: (Math.random() * 2) + 1,
                     color: `hsl(${Math.random() * 360}, 100%, 50%)`,
                     size: Math.random() * 5 + 5,
                     rotation: Math.random() * 360,
@@ -1591,6 +1636,21 @@
             }
         };
     });
+
+    function resetBall() {
+        if (currentServer === window.playerRole) {
+            ball.x = player.x + getPlayerWidth(player) + ballRadius;
+            ball.y = player.y + getHeadRadius(player);
+        } else {
+            ball.x = opponent.x - ballRadius;
+            ball.y = opponent.y + getHeadRadius(opponent);
+        }
+        ball.dx = 0;
+        ball.dy = 0;
+        ball.inServe = true;
+        ball.trail = [];
+        ball.netCollision = false;
+    }
 </script>
 </body>
 </html>

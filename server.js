@@ -1,5 +1,3 @@
-// server.js
-
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
@@ -73,7 +71,10 @@ io.on('connection', (socket) => {
         rooms[roomId] = {
             id: roomId,
             players: [socket.id],
-            state: {} // Game state
+            state: {},
+            mapSelected: false,
+            charactersSelected: 0,
+            playersReady: {}, // Changed to object
         };
         socket.join(roomId);
         socket.emit('roomCreated', { roomId, playerRole: 'player1' });
@@ -87,12 +88,9 @@ io.on('connection', (socket) => {
             if (rooms[roomId].players.length < 2) {
                 rooms[roomId].players.push(socket.id);
                 socket.join(roomId);
-                socket.emit('roomJoined', { roomId });
+                socket.emit('roomJoined', { roomId, playerRole: 'player2' });
                 console.log(`${socket.id} joined room ${roomId}`);
-                // Notify both players that the game can start
-                const [player1SocketId, player2SocketId] = rooms[roomId].players;
-                io.to(player1SocketId).emit('startGame', { playerRole: 'player1' });
-                io.to(player2SocketId).emit('startGame', { playerRole: 'player2' });
+                socket.to(roomId).emit('opponentJoined');
             } else {
                 socket.emit('joinError', 'Room is full');
             }
@@ -101,58 +99,114 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Handle game state updates from clients
+    // Handle map selection (only by player1)
+    socket.on('backgroundSelected', (data) => {
+        const roomId = getRoomId(socket);
+        if (roomId && rooms[roomId].players[0] === socket.id) {
+            rooms[roomId].state.backgroundIndex = data.backgroundIndex;
+            rooms[roomId].mapSelected = true;
+            socket.to(roomId).emit('backgroundSelected', data);
+            console.log(`Background selected for room ${roomId}: ${data.backgroundIndex}`);
+        } else {
+            socket.emit('mapSelectionError', 'Only the room creator can select the map');
+        }
+    });
+
+    // Handle character selection
+    socket.on('characterSelected', (data) => {
+        const roomId = getRoomId(socket);
+        if (roomId) {
+            const playerIndex = rooms[roomId].players.indexOf(socket.id);
+            if (playerIndex !== -1) {
+                rooms[roomId].state[`player${playerIndex + 1}Character`] = data.characterIndex;
+                rooms[roomId].charactersSelected++;
+
+                // Broadcast to the other player
+                socket.to(roomId).emit('characterSelected', { characterIndex: data.characterIndex, socketId: socket.id });
+
+                // Check if both characters are selected and map is selected
+                if (rooms[roomId].charactersSelected === 2 && rooms[roomId].mapSelected) {
+                    // Notify both players to proceed
+                    io.to(roomId).emit('bothCharactersSelected');
+                }
+            }
+        }
+    });
+
+    // Handle player readiness
+    socket.on('playerReady', () => {
+        const roomId = getRoomId(socket);
+        if (roomId && rooms[roomId]) {
+            rooms[roomId].playersReady[socket.id] = true;
+            console.log(`Player ${socket.id} is ready in room ${roomId}.`);
+
+            // Check if both players are ready
+            const room = rooms[roomId];
+            if (room.players.length === 2 &&
+                room.playersReady[room.players[0]] &&
+                room.playersReady[room.players[1]]) {
+                io.to(roomId).emit('bothPlayersReady');
+                console.log(`Both players in room ${roomId} are ready. Emitting 'bothPlayersReady'.`);
+            }
+        }
+    });
+
+    // Handle initial positions
+    socket.on('initialPositions', (data) => {
+        const roomId = getRoomId(socket);
+        if (roomId) {
+            socket.to(roomId).emit('initialPositions', data);
+        }
+    });
+
+    // Handle game state updates
     socket.on('gameStateUpdate', (data) => {
         const roomId = getRoomId(socket);
         if (roomId) {
-            // Broadcast to the other player
             socket.to(roomId).emit('gameStateUpdate', data);
         }
     });
 
-    // Handle point scoring
-    socket.on('pointScored', (data) => {
+    // Handle request for background
+    socket.on('requestBackground', () => {
         const roomId = getRoomId(socket);
         if (roomId) {
-            io.to(roomId).emit('pointScored', data);
+            const player1SocketId = rooms[roomId].players[0];
+            io.to(player1SocketId).emit('requestBackground');
         }
     });
 
     // Handle disconnection
     socket.on('disconnect', () => {
         console.log('user disconnected:', socket.id);
-        // Remove player from rooms
         const roomId = getRoomId(socket);
-        if (roomId) {
+        if (roomId && rooms[roomId]) {
             const room = rooms[roomId];
+            // Remove the player from the room
             room.players = room.players.filter(id => id !== socket.id);
-            // If room is empty, delete it
+            // Remove readiness status
+            delete room.playersReady[socket.id];
             if (room.players.length === 0) {
                 delete rooms[roomId];
+                console.log(`Room ${roomId} deleted as it became empty.`);
             } else {
-                // Notify remaining player that opponent has left
-                socket.to(roomId).emit('opponentLeft');
+                socket.to(roomId).emit('opponentDisconnected');
+                console.log(`Player ${socket.id} disconnected from room ${roomId}.`);
             }
         }
-        // Remove player from players map
         delete players[socket.id];
     });
-});
 
-// Generate a unique room ID
-function generateRoomId() {
-    return Math.random().toString(36).substr(2, 6).toUpperCase();
-}
-
-// Get the room ID that a socket is in
-function getRoomId(socket) {
-    const roomsOfSocket = Object.keys(socket.rooms);
-    // The first room is socket.id, so we need the second one
-    if (roomsOfSocket.length > 1) {
-        return roomsOfSocket[1]; // Should be the room ID
+    // Utility functions
+    function generateRoomId() {
+        return Math.random().toString(36).substr(2, 6).toUpperCase();
     }
-    return null;
-}
+
+    function getRoomId(socket) {
+        const roomsOfSocket = Array.from(socket.rooms);
+        return roomsOfSocket.length > 1 ? roomsOfSocket[1] : null;
+    }
+});
 
 // Start the server
 const PORT = process.env.PORT || 3000;
