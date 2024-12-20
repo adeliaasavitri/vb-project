@@ -1,11 +1,26 @@
 {
   "Rishab": {
-    "password": "12345678"
-  },
-  "Rishab2": {
-    "password": "12345678"
+    "encryptedPassword": "$2b$10$l.Nh0oE/PjUFMIi4TH3Ba.wDskhFaJihJTSfQCX2QiazHpYiCy48.",
+    "matchWins": 1
   },
   "Rishab3": {
-    "password": "12"
+    "encryptedPassword": "$2b$10$2..m79WvMghUcCaW/1qeyugscYRbBs2yvl94bJtVjXMdmbXTvHLqq",
+    "matchWins": 0
+  },
+  "lorax": {
+    "encryptedPassword": "$2b$10$iCZU7vRom3xxacvRQ5mupexkGZtRhgsd1gTT0Z2bSSiEKz/LzMdYC",
+    "matchWins": 0
+  },
+  "goats": {
+    "encryptedPassword": "$2b$10$GBtQKV/nGJxQBm.D.ddb.Oo0N0K1fB.3vn3Fadj/d1PCoQzchsUIC",
+    "matchWins": 0
+  },
+  "camel": {
+    "encryptedPassword": "$2b$10$xjzByPjeQfeSTtdM9sSX0..oBywrcqnv.J1w4icyudjwofHlePgHO",
+    "matchWins": 0
+  },
+  "zebra": {
+    "encryptedPassword": "$2b$10$fHBEhaky9Wra9idSKZn1D.Tg2bwzuVjErszoeV4qWOvpMhd3/rp9y",
+    "matchWins": 0
   }
 }

@@ -3,6 +3,8 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const fs = require('fs');
+const bcrypt = require("bcrypt"); // PASSWORD
+
 
 // For handling JSON database
 const usersFilePath = './users.json';
@@ -42,10 +44,12 @@ io.on('connection', (socket) => {
     // Handle login
     socket.on('login', (data) => {
         const { username, password } = data;
-        if (users[username] && users[username].password === password) {
-            players[socket.id] = { username };
-            socket.emit('loginSuccess', { username });
-            console.log(`${username} logged in`);
+        if (users[username]) {
+            if (bcrypt.compareSync(password, users[username].encryptedPassword)){ // Compare the hashed password and the actual pass
+                players[socket.id] = { username };
+                socket.emit('loginSuccess', { username });
+                console.log(`${username} logged in`);
+           }
         } else {
             socket.emit('loginError', 'Invalid username or password');
         }
@@ -57,7 +61,8 @@ io.on('connection', (socket) => {
         if (users[username]) {
             socket.emit('registerError', 'Username already taken');
         } else {
-            users[username] = { password };
+            const encryptedPassword = bcrypt.hashSync(password, 10);
+            users[username] = { encryptedPassword, matchWins:0 };
             saveUsers();
             players[socket.id] = { username };
             socket.emit('registerSuccess', { username });
@@ -68,6 +73,7 @@ io.on('connection', (socket) => {
     // Handle room creation
     socket.on('createRoom', () => {
         const roomId = generateRoomId();
+        const newTime = new Date();
         rooms[roomId] = {
             id: roomId,
             players: [socket.id],
@@ -75,6 +81,8 @@ io.on('connection', (socket) => {
             mapSelected: false,
             charactersSelected: 0,
             playersReady: {}, // Changed to object
+            gameStart: 0,
+            timeStart: newTime
         };
         socket.join(roomId);
         socket.emit('roomCreated', { roomId, playerRole: 'player1' });
@@ -142,9 +150,12 @@ io.on('connection', (socket) => {
 
             // Check if both players are ready
             const room = rooms[roomId];
+            room.gameStart+=1;
+            console.log("Game Participants: ", room.gameStart);
             if (room.players.length === 2 &&
                 room.playersReady[room.players[0]] &&
-                room.playersReady[room.players[1]]) {
+                room.playersReady[room.players[1]] &&
+                room.gameStart == 2){
                 io.to(roomId).emit('bothPlayersReady');
                 console.log(`Both players in room ${roomId} are ready. Emitting 'bothPlayersReady'.`);
             }
@@ -167,6 +178,13 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('backWaiting', () => {
+        const roomId = getRoomId(socket);
+        if (roomId) {
+            io.to(roomId).emit('go back waiting');
+        }
+    });
+
     // Handle request for background
     socket.on('requestBackground', () => {
         const roomId = getRoomId(socket);
@@ -175,6 +193,25 @@ io.on('connection', (socket) => {
             io.to(player1SocketId).emit('requestBackground');
         }
     });
+
+
+    socket.on('gameOver', () => {
+        let user_name;
+        // data would contain which players win
+        const roomId = getRoomId(socket);
+        user_name = players[socket.id]
+        users[user_name.username].matchWins += 1
+        /// Convert the object to an array of entries (username and user data)
+        const usersArray = Object.entries(users);
+        // Sort the array based on matchWins
+        usersArray.sort(([, a], [, b]) => b.matchWins - a.matchWins); // Sort from highest to lowest
+        saveUsers();
+        const currTime = new Date();
+        const timeTaken = ((currTime - rooms[roomId].timeStart)/1000).toFixed(4)
+
+        const topFive = usersArray.slice(0, 5); // This will get the first 5 users
+        io.to(roomId).emit('showGameOverScreen', {timeTaken, topFive});
+    })
 
     // Handle disconnection
     socket.on('disconnect', () => {

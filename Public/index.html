@@ -8,7 +8,7 @@
         body {
             margin: 0;
             overflow: hidden;
-            background: linear-gradient(to top, #87ceeb, #ffffff);
+            background: url('background13.png') no-repeat center center fixed;
             font-family: 'Press Start 2P', Arial, sans-serif;
             height: 100vh;
         }
@@ -149,7 +149,7 @@
             text-align: center;
         }
         .character-selection-title {
-            font-size: 32px Press Start 2P;
+            font-size: 32px;
             margin-bottom: 20px;
             text-align: center;
         }
@@ -186,11 +186,11 @@
         }
         .character-card h2 {
             margin-top: 10px;
-            font-size: 20px Press Start 2P;
+            font-size: 20px;
         }
         .character-card p {
             margin: 5px 0;
-            font-size: 14px Press Start 2P;
+            font-size: 14px;
         }
         #startGameButton {
             padding: 15px 30px;
@@ -262,6 +262,116 @@
         #loginScreen a:hover, #registerScreen a:hover {
             text-decoration: underline;
         }
+        #game-over-text {
+        font-size: 200%;
+        fill: url(#game-over-fill);
+        text-anchor: middle;
+        font-weight: bold;
+        }
+        #win-lose-text {
+            font-size: 120%;
+            fill: url(#game-over-fill);
+            text-anchor: middle;
+            font-weight: bold;
+        }
+        #try-again-text {
+            font-size: 120%;
+            fill: url(#game-over-fill);
+            text-anchor: middle;
+            font-weight: bold;
+        }
+        #game-over {
+        background: rgba(1, 1, 1, 0.8);
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        border: 1px solid gray;
+        width: 100%;
+        height: 100%;
+        }
+        /* Cheat Feedback Message */
+        #cheatMessage {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 20px 40px;
+            background: rgba(255, 0, 0, 0.8);
+            color: #fff;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            font-size: 24px;
+            border-radius: 10px;
+            display: none;
+            z-index: 1000;
+        }
+
+        /* Help Modal Styles */
+        #helpModal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 2000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+        }
+        #helpModalContent {
+            background-color: #333;
+            margin: 10% auto; /* 10% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+            border-radius: 10px;
+            color: #fff;
+            font-size: 14px;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        #closeHelp {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+        }
+        #closeHelp:hover,
+        #closeHelp:focus {
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #helpModalContent h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #helpModalContent ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+        #helpModalContent li {
+            margin-bottom: 10px;
+        }
+        #helpButton {
+            padding: 10px 20px;
+            font-family: 'Press Start 2P', Arial, sans-serif;
+            cursor: pointer;
+            background-color: #17a2b8;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        #helpButton:hover {
+            background-color: #117a8b;
+        }
     </style>
 </head>
 <body>
@@ -271,12 +381,15 @@
 <audio id="smallSelectSound" src="small_select.mp3"></audio>
 <audio id="hitSound" src="hitball.mp3"></audio>
 <audio id="netHitSound" src="nethit.mp3"></audio>
+<audio id="powerUpSound" src="sfx.mp3"></audio>
+
 
 <div id="loginScreen">
     <h1>Login</h1>
     <input type="text" id="loginUsername" placeholder="Username">
     <input type="password" id="loginPassword" placeholder="Password">
     <button id="loginButton">Login</button>
+    <button id="helpButton">Instructions</button>
     <p>Don't have an account? <a href="#" id="showRegister">Register here</a></p>
     <p id="loginError" style="color: red;"></p>
 </div>
@@ -311,6 +424,7 @@
 
 <div id="backgroundSelection">
     <h1 class="background-selection-title">Select Your Map</h1>
+    <h2 id="roomCode" style="display: none;"></h2>
     <div class="background-options">
     </div>
     <button id="proceedToCharacterSelectionButton" disabled>Proceed</button>
@@ -326,6 +440,110 @@
     </div>
     <button id="startGameButton" disabled>Start Game</button>
 </div>
+
+<!-- Cheat Feedback Message -->
+<div id="cheatMessage"></div>
+
+<!-- Help Modal -->
+<div id="helpModal">
+    <div id="helpModalContent">
+        <span id="closeHelp">&times;</span>
+        <h2>Game Instructions</h2>
+        <ul>
+            <li><strong>Movement:</strong> This is Xtreme Volleyball. A new sport combining power ups with Vollyball.</li>
+            <li><strong>Movement:</strong> Move left with <code>A</code>, right with <code>D</code>, and jump with <code>W</code>.</li>
+            <li><strong>Setting the Ball:</strong> To set the ball like in volleyball, simply let it hit you without jumping.</li>
+            <li><strong>Striking the Ball:</strong> To strike the ball, ensure you are jumping when you hit it.</li>
+            <li><strong>Power-Ups:</strong> Power-ups will fall from the sky. There are three types:
+                <ul>
+                    <li><strong>Mud:</strong> Prevents you from moving.</li>
+                    <li><strong>Enlarge:</strong> Increases your size.</li>
+                    <li><strong>Lightning:</strong> Enhances your speed.</li>
+                </ul>
+            </li>
+            <li><strong>Cheat Code:</strong> Press <code>P</code> to become massive and block any shot, allowing you to win easily. Press <code>P</code> again to return to your normal size.</li>
+        </ul>
+        <p>Good luck and have fun!</p>
+    </div>
+</div>
+
+<svg xmlns="http://www.w3.org/2000/svg" id="game-over" style="display: none">
+    <g id="game-over-text">
+        <defs>
+            <linearGradient id="game-over-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="red" />
+                <stop offset="0.7" stop-color="orange" />
+                <stop offset="1" stop-color="yellow" />
+            </linearGradient>
+        </defs>
+        <text x="50%" y="15%">
+            GAME OVER
+        </text>
+    </g>
+
+    <g id="win-lose-text">
+        <text x="50%" y="22%" id="win-or-lose">
+            YOU LOSE!
+        </text>
+    </g>
+
+    <g transform="translate(0, 50)">
+        <rect x="8%" y="15%" width="40%" height="50%" rx="10" ry="10" fill="#F5F5DC" fill-opacity="0.7" />
+        <text x="28%" y="23%" font-weight="bold" text-anchor="middle" font-size="15">Game Statistics</text>
+        <text x="10%" y="35%" font-size="14">Total points: 11</text>
+        <text x="10%" y="45%" font-size="14" id="time-taken">Time Taken: </text>
+    </g>
+
+    <g transform="translate(40%, 50)">
+        <rect x="52%" y="25%" width="40%" height="50%" rx="10" ry="10" fill="#F5F5DC" fill-opacity="0.7" />
+        <text x="72%" y="33%" font-weight="bold" text-anchor="middle" font-size="15">Ranking</text>
+        <g>
+            <text x="55%" y="43%" font-size="12" id="player1-name">1. Player1</text>
+            <text x="85%" y="43%" font-size="12" id="points1-name">M: </text>
+        </g>
+        <g>
+            <text x="55%" y="49%" font-size="12" id="player2-name">2. Player2</text>
+            <text x="85%" y="49%" font-size="12" id="points2-name">M: </text>
+        </g>
+        <g>
+            <text x="55%" y="55%" font-size="12" id="player3-name">3. Player3</text>
+            <text x="85%" y="55%" font-size="12" id="points3-name">M: </text>
+        </g>
+        <g>
+            <text x="55%" y="61%" font-size="12" id="player4-name">4. N/A</text>
+            <text x="85%" y="61%" font-size="12" id="points4-name">M: 0</text>
+        </g>
+        <g>
+            <text x="55%" y="67%" font-size="12" id="player5-name">5. N/A</text>
+            <text x="85%" y="67%" font-size="12" id="points5-name">M: 0</text>
+        </g>
+    </g>
+
+    <g id="try-again-text">
+        <text x="50%" y="85%">
+            BACK TO HOME SCREEN
+        </text>
+    </g>
+
+    <g id="button-choices">
+        <defs>
+            <linearGradient id="button-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="yellow" />
+                <stop offset="0.5" stop-color="orange" />
+                <stop offset="1" stop-color="red" />
+            </linearGradient>
+        </defs>
+
+        <!-- Button for YES -->
+        <rect x="48%" y="87%" width="110" height="30" rx="5" ry="5" fill="url(#button-fill)" id="yes-gameover-button"/>
+        <text font-size="12" x="50%" y="90%" text-anchor="middle" fill="black" id="yes-gameover-button">
+            YES
+        </text>
+
+    </g>
+
+</svg>
+
 
 <canvas id="gameCanvas"></canvas>
 
@@ -407,6 +625,8 @@
     socket.on('roomCreated', (data) => {
         window.playerRole = data.playerRole;
         roomSelectionScreen.style.display = 'none';
+        document.getElementById("roomCode").style.display = "flex";
+        document.getElementById("roomCode").textContent = data.roomId + " : share the code and wait for your friend!";
         if (window.playerRole === 'player1') {
             backgroundSelection.style.display = 'flex';
         } else {
@@ -480,6 +700,14 @@
         { name: 'Stadium', image: 'background_7.png' },
         { name: 'Space', image: 'background_8.png' },
     ];
+
+    function playPowerUpSound() {
+        const powerUpSound = document.getElementById("powerUpSound");
+        powerUpSound.currentTime = 0; // Reset to start
+        powerUpSound.play().catch(error => {
+            console.error("Failed to play power-up sound:", error);
+        });
+    }
 
     function createBackgroundCards() {
         backgrounds.forEach((background, index) => {
@@ -635,16 +863,12 @@
         if (characterSelected !== null && opponentCharacterSelected !== null && bothPlayersReady) {
             characterSelection.style.display = 'none';
             document.getElementById('scoreboard').style.display = 'flex';
-
             const playerIconCanvas = document.getElementById(window.playerRole === 'player1' ? "player1Icon" : "player2Icon").getContext("2d");
             drawMiniStickmanIcon(playerIconCanvas, characters[characterSelected]);
-
             const opponentIconCanvas = document.getElementById(window.playerRole === 'player1' ? "player2Icon" : "player1Icon").getContext("2d");
             drawMiniStickmanIcon(opponentIconCanvas, characters[opponentCharacterSelected]);
-
             initializePlayers();
             initPositions();
-
             // Prevent multiple game loops by checking the flag
             if (!gameLoopRunning) { // <--- Check if the game loop is already running
                 gameLoopRunning = true; // <--- Set the flag to true
@@ -805,6 +1029,10 @@
         return defaultLegHeight * player.sizeMultiplier * (player.enlarged ? 1.5 : 1);
     }
 
+    // Cheat Code Variables
+    let cheatEnlarged = false;
+    let originalSizeMultiplier = 1;
+
     // Game Loop and Logic
     function gameLoop() {
         draw();
@@ -836,10 +1064,10 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        if (gameOver) {
-            showGameOverScreen();
-            return;
-        }
+        // if (gameOver) {
+        //    showGameOverScreen();
+        //    return;
+        // }
 
         if (backgroundImage.complete) {
             ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
@@ -1097,7 +1325,7 @@
         const iconHeight = 100;
         const headRadius = 15;
         const torsoX = iconWidth / 2;
-        const torsoY = headRadius;
+        const torsoY = headRadius*2;
 
         const skinTone = "#d2a679";
 
@@ -1128,6 +1356,7 @@
                 smashActivated: player.smashActivated,
                 isStuck: player.isStuck,
                 enlarged: player.enlarged,
+                sizeMultiplier: player.sizeMultiplier, // Added line
                 score: player.score,
             },
             ball: {
@@ -1150,6 +1379,7 @@
         opponent.smashActivated = data.player.smashActivated;
         opponent.isStuck = data.player.isStuck;
         opponent.enlarged = data.player.enlarged;
+        opponent.sizeMultiplier = data.player.sizeMultiplier; // Added line
         opponent.score = data.player.score;
 
         if (window.playerRole !== currentServer) {
@@ -1160,6 +1390,45 @@
             ball.inServe = data.ball.inServe;
         }
     });
+
+    socket.on('showGameOverScreen', (data) => {
+        const {timeTaken, topFive} = data
+        // Update the SVG text elements
+        document.getElementById(`time-taken`).textContent = `Time Taken: ${timeTaken}`;
+        topFive.forEach((player, index) => {
+            const playerName = player[0]; // Username
+            const matchWins = player[1].matchWins; // Match wins
+
+            // Update the corresponding SVG text elements
+            document.getElementById(`player${index + 1}-name`).textContent = `${index + 1}. ${playerName}`;
+            document.getElementById(`points${index + 1}-name`).textContent = `M: ${matchWins}`;
+        });
+
+        // // If there are fewer than 5 players, you may want to clear the remaining text elements
+        // for (let i = topFive.length; i < 5; i++) {
+        //     document.getElementById(`player${i + 1}-name`).textContent = `${i + 1}. N/A`;
+        //     document.getElementById(`points${i + 1}-name`).textContent = `M: 0`;
+        // }
+        document.getElementById('game-over').style.display = 'flex';
+         // Get references to the buttons
+        const yesButton = document.getElementById('yes-gameover-button');
+
+        yesButton.addEventListener('click', () => {
+            // socket.emit("backWaiting");
+            // document.getElementById('background.png').style.display = 'flex'; UNCOMMENT THIS
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            document.getElementById('game-over').style.display = 'none';
+            backgroundSelection.style.display = 'none';
+            document.getElementById('scoreboard').style.display = 'none';
+            roomSelectionScreen.style.display = 'block';
+        });
+    })
+
+    // socket.on("go back waiting", () => {
+    //     document.getElementById('game-over').style.display = 'none';
+    //     roomSelectionScreen.style.display = 'block';
+    // });
+
 
     function updateBall() {
         if (currentServer !== window.playerRole) return;
@@ -1241,6 +1510,10 @@
             }
 
             if (player.score >= 11 || opponent.score >= 11) {
+                if(player.score >= 11){
+                    document.getElementById(`win-or-lose`).textContent = `YOU WIN!`;
+                    socket.emit('gameOver');
+                }
                 gameOver = true;
                 return;
             }
@@ -1346,10 +1619,14 @@
                 }
 
                 if (player.score >= 11 || opponent.score >= 11) {
+                    if(player.score >= 11){
+                    document.getElementById(`win-or-lose`).textContent = `YOU WIN!`;
+                    socket.emit('gameOver');
+                }
                     gameOver = true;
                     return;
                 }
-
+                drawScores();
                 resetBall();
             }
         }
@@ -1364,7 +1641,7 @@
             if (keys["a"] && player.x > 0) {
                 player.x -= 10 * player.speedMultiplier;
             }
-            if (keys["d"] && player.x < canvas.width / 2 - getPlayerWidth(player)) {
+            if (keys["d"] && player.x < canvas.width - getPlayerWidth(player)) {
                 player.x += 10 * player.speedMultiplier;
             }
         } else {
@@ -1432,6 +1709,7 @@
                     powerUp.y < player.y + playerHeight + legHeight
                 ) {
                     powerUp.collected = true;
+                    playPowerUpSound(); // Play the sound effect
                     applyPowerUpEffect(powerUp, player);
                     setTimeout(() => {
                         powerUps.splice(index, 1);
@@ -1585,9 +1863,22 @@
         if (!keys[e.key]) {
             keys[e.key] = true;
 
-            if (e.key === 's') {
+            if (e.key === 's' || e.key === 'S') {
                 if (player.canSmash) {
                     player.smashActivated = true;
+                }
+            }
+
+            // Cheat code for 'p' key
+            if (e.key === 'p' || e.key === 'P') {
+                cheatEnlarged = !cheatEnlarged;
+                if (cheatEnlarged) {
+                    originalSizeMultiplier = player.sizeMultiplier;
+                    player.sizeMultiplier = 3.7;
+                    showCheatMessage("Cheat Activated: Player Enlarged!");
+                } else {
+                    player.sizeMultiplier = originalSizeMultiplier;
+                    showCheatMessage("Cheat Deactivated: Player Size Normalized.");
                 }
             }
         }
@@ -1597,20 +1888,47 @@
         keys[e.key] = false;
     });
 
+    // Cheat Feedback Function
+    const cheatMessage = document.getElementById('cheatMessage');
+
+    function showCheatMessage(message) {
+        cheatMessage.textContent = message;
+        cheatMessage.style.display = 'block';
+        setTimeout(() => {
+            cheatMessage.style.display = 'none';
+        }, 2000);
+    }
+
+    // Counters stored outside the function to persist across calls
+    let powerUpCounter = 0;
+    let sideCounter = 0;
+    let offsetCounter = 0;
+
     function spawnPowerUp() {
         const powerUpTypes = ['mud', 'speed', 'enlarge'];
-        const type = powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
-        const side = Math.random() < 0.5 ? 'left' : 'right';
+        const sides = ['left', 'right'];
+        const xOffsets = [50, 300, 550]; // Example offsets for deterministic positioning
 
+        // Get the next power-up type, side, and position
+        const type = powerUpTypes[powerUpCounter % powerUpTypes.length];
+        const side = sides[sideCounter % sides.length];
+        const xOffset = xOffsets[offsetCounter % xOffsets.length];
+
+        // Increment counters for the next call
+        powerUpCounter++;
+        sideCounter++;
+        offsetCounter++;
+
+        const x = side === 'left' ? xOffset : canvas.width - xOffset;
+        const y = 0;
+
+        // Check if a power-up already exists on the same side
         if (powerUps.some(powerUp => powerUp.side === side && !powerUp.collected)) {
-            setTimeout(spawnPowerUp, Math.random() * 10000 + 5000);
+            setTimeout(spawnPowerUp, 5000); // Fixed delay
             return;
         }
 
-        const x = side === 'left' ? Math.random() * (canvas.width / 2 - 100) + 50
-                                  : Math.random() * (canvas.width / 2 - 100) + canvas.width / 2 + 50;
-        const y = 0;
-
+        // Add the new power-up
         powerUps.push({
             type: type,
             x: x,
@@ -1621,7 +1939,8 @@
             animationTime: 0
         });
 
-        setTimeout(spawnPowerUp, Math.random() * 10000 + 5000);
+        // Call the function again after a fixed delay
+        setTimeout(spawnPowerUp, 5000); // Fixed delay
     }
     setTimeout(spawnPowerUp, 5000);
 
@@ -1651,6 +1970,28 @@
         ball.trail = [];
         ball.netCollision = false;
     }
+
+    // Help Modal Functionality
+    const helpButton = document.getElementById('helpButton');
+    const helpModal = document.getElementById('helpModal');
+    const closeHelp = document.getElementById('closeHelp');
+
+    // Open the Help Modal
+    helpButton.addEventListener('click', () => {
+        helpModal.style.display = 'block';
+    });
+
+    // Close the Help Modal when the user clicks on <span> (x)
+    closeHelp.addEventListener('click', () => {
+        helpModal.style.display = 'none';
+    });
+
+    // Close the Help Modal when the user clicks anywhere outside of the modal content
+    window.addEventListener('click', (event) => {
+        if (event.target == helpModal) {
+            helpModal.style.display = 'none';
+        }
+    });
 </script>
 </body>
 </html>
